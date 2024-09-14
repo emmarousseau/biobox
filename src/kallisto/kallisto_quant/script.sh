@@ -1,49 +1,46 @@
 #!/bin/bash
 
+## VIASH START
+## VIASH END
+
 set -eo pipefail
 
-IFS="," read -ra input <<< $par_input
+unset_if_false=( par_single par_single_overhang par_rf_stranded par_fr_stranded par_plaintext )
 
-single_end_params=''
-if [ $par_paired == "false" ]; then
-    if [[ $par_fragment_length < 0 ]] || [[ ! $fragment_length_sd < 0 ]]; then
-        echo "fragment_length and fragment_length_sd must be set for single-end data"
+for var in "${unset_if_false[@]}"; do
+    temp_var="${!var}"
+    [[ "$temp_var" == "false" ]] && unset $var
+done
+
+IFS=";" read -ra input <<< $par_input
+
+# Check if par_single is not set and ensure even number of input files
+if [ -z "$par_single" ]; then
+    if [ $((${#input[@]} % 2)) -ne 0 ]; then
+        echo "Error: When running in paired-end mode, the number of input files must be even."
+        echo "Number of input files provided: ${#input[@]}"
         exit 1
     fi
-    single_end_params="--single --fragment-length $par_fragment_length --sd $par_fragment_length_sd"
 fi
 
-strandedness=''
-if [[ "$par_extra_args" != *"--fr-stranded"* ]] && [[ "$par_extra_args" != *"--rf-stranded"* ]]; then
-    if [ "$par_strandedness" == 'forward' ]; then
-        strandedness='--fr-stranded'
-    elif [ "$par_strandedness" == 'reverse' ]; then
-        strandedness='--rf-stranded'
-    fi
-fi
 
-mkdir -p $par_output
-echo "kallisto quant \
-    ${meta_cpus:+--threads $meta_cpus} \
-    --index $par_index \
-    ${par_gtf:+--gtf $par_gtf} \
-    ${par_chromosomes:+--chromosomes $par_chromosomes} \
-    $single_end_params \
-    $strandedness \
-    $par_extra_args \
-    -o $par_output \
-    ${input[*]} 2> >(tee -a ${par_output}/kallisto_quant.log >&2)"
+mkdir -p $par_output_dir
+
+
 kallisto quant \
     ${meta_cpus:+--threads $meta_cpus} \
-    --index $par_index \
-    ${par_gtf:+--gtf $par_gtf} \
-    ${par_chromosomes:+--chromosomes $par_chromosomes} \
-    $single_end_params \
-    $strandedness \
-    $par_extra_args \
-    -o $par_output \
-    ${input[*]} 2> >(tee -a ${par_output}/kallisto_quant.log >&2)
+    -i $par_index \
+    ${par_gtf:+--gtf "${par_gtf}"} \
+    ${par_single:+--single} \
+    ${par_single_overhang:+--single-overhang} \
+    ${par_fr_stranded:+--fr-stranded} \
+    ${par_rf_stranded:+--rf-stranded} \
+    ${par_plaintext:+--plaintext} \
+    ${par_bootstrap_samples:+--bootstrap-samples "${par_bootstrap_samples}"} \
+    ${par_fragment_length:+--fragment-length "${par_fragment_length}"} \
+    ${par_sd:+--sd "${par_sd}"} \
+    ${par_seed:+--seed "${par_seed}"} \
+    -o $par_output_dir \
+    ${input[*]}
 
-mv ${par_output}/kallisto_quant.log ${par_log}
-mv ${par_output}/run_info.json ${par_run_info}
-cp ${par_output}/abundance.tsv ${par_quant_results_file}
+

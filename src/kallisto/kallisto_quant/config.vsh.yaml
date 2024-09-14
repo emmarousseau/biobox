@@ -22,9 +22,11 @@ argument_groups:
     multiple: true
     required: true
   - name: "--index"
+    alternatives: ["-i"]
     type: file
     description: Kallisto genome index.
     must_exist: true
+    required: true
   - name: "--gtf"
     type: file
     description: Optional gtf file for translation of transcripts into genomic coordinates.
@@ -33,9 +35,11 @@ argument_groups:
 
 - name: "Output"
   arguments:
-  - name: "--output"
+  - name: "--output_dir"
+    alternatives: ["-o"]
     type: string
     description: Directory to write output to.
+    required: true
 
 - name: "Options"
   arguments:
@@ -84,19 +88,21 @@ resources:
 test_resources:
 - type: bash_script
   path: test.sh
-- type: path
+- type: file
   path: test_data
 
-
 engines:
-- type: "docker"
-  id: "docker"
-  image: "ubuntu:22.04"
-  namespace_separator: "/"
-  setup:
-  - type: "docker"
-    run:
-    - "apt-get update && \\\napt-get install -y --no-install-recommends wget && \\\
-      \nwget --no-check-certificate https://github.com/pachterlab/kallisto/releases/download/v0.50.1/kallisto_linux-v0.50.1.tar.gz\
-      \ && \\\ntar -xzf kallisto_linux-v0.50.1.tar.gz && \\\nmv kallisto/kallisto\
-      \ /usr/local/bin/\n"
+  - type: docker
+    image: ubuntu:22.04
+    setup:
+      - type: docker
+        run: |
+          apt-get update && \
+          apt-get install -y --no-install-recommends wget && \
+          wget --no-check-certificate https://github.com/pachterlab/kallisto/releases/download/v0.50.1/kallisto_linux-v0.50.1.tar.gz && \
+          tar -xzf kallisto_linux-v0.50.1.tar.gz && \
+          mv kallisto/kallisto /usr/local/bin/ && \
+          echo "kallisto: $(kallisto version | sed 's/kallisto, version //')" > /var/software_versions.txt
+runners:
+  - type: executable
+  - type: nextflow  
