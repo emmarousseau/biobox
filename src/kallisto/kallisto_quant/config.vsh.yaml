@@ -27,11 +27,6 @@ argument_groups:
     description: Kallisto genome index.
     must_exist: true
     required: true
-  - name: "--gtf"
-    type: file
-    description: Optional gtf file for translation of transcripts into genomic coordinates.
-    must_exist: true
-    create_parent: true
 
 - name: "Output"
   arguments:

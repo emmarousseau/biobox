@@ -2,11 +2,6 @@
 
 echo ">>> Testing $meta_functionality_name"
 
-# echo ">>> Generating Kallisto index"
-# kallisto index \
-#     -i index \
-#     $meta_resources_dir/transcriptome.fasta
-
 echo ">>> Test 1: Testing for paired-end reads"
 "$meta_executable" \
   --index "$meta_resources_dir/test_data/index/transcriptome.idx" \
@@ -22,7 +17,12 @@ echo ">>> Checking whether output exists"
 [ ! -f "abundance.h5" ] && echo "abundance.h5 does not exist!" && exit 1
 [ ! -s "abundance.h5" ] && echo "abundance.h5 is empty!" && exit 1
 
+echo ">>> Checking if output is correct"
+diff "abundance.tsv" "$meta_resources_dir/test_data/abundance_1.tsv" || { echo "abundance.tsv is not correct"; exit 1; }
+
 rm -rf abundance.tsv abundance.h5 run_info.json
+
+################################################################################
 
 echo ">>> Test 2: Testing for single-end reads"
 "$meta_executable" \
@@ -41,6 +41,13 @@ echo ">>> Checking whether output exists"
 [ ! -s "abundance.tsv" ] && echo "abundance.tsv is empty!" && exit 1
 [ ! -f "abundance.h5" ] && echo "abundance.h5 does not exist!" && exit 1
 [ ! -s "abundance.h5" ] && echo "abundance.h5 is empty!" && exit 1
+
+echo ">>> Checking if output is correct"
+diff "abundance.tsv" "$meta_resources_dir/test_data/abundance_2.tsv" || { echo "abundance.tsv is not correct"; exit 1; }
+
+rm -rf abundance.tsv abundance.h5 run_info.json
+
+################################################################################
 
 echo "All tests succeeded!"
 exit 0
